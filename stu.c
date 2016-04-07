@@ -344,6 +344,9 @@ typedef struct {
 	FcPattern *pattern;
 } Font;
 
+/* colors */
+char colorname[16][8];
+
 /* Drawing Context */
 typedef struct {
 	Color col[MAX(LEN(colorname), 256)];
@@ -4429,6 +4432,10 @@ main(int argc, char *argv[])
 	xw.l = xw.t = 0;
 	xw.isfixed = False;
 	xw.cursor = cursorshape;
+
+  for (int i = 0; i < 16 ; i++ ) {
+    strcpy(colorname[i], defaultcolorname[i]);
+  }
 
 	ARGBEGIN {
 	case 'a':
