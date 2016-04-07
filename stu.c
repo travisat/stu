@@ -3434,7 +3434,7 @@ xloadfonts(char *fontstr, double fontsize)
 	FcDefaultSubstitute(pattern);
 
 	if (xloadfont(&dc.font, pattern))
-		die("st: can't open font %s\n", fontstr);
+		die("stu: can't open font %s\n", fontstr);
 
 	if (usedfontsize < 0) {
 		FcPatternGetDouble(dc.font.match->pattern,
@@ -3451,17 +3451,17 @@ xloadfonts(char *fontstr, double fontsize)
 	FcPatternDel(pattern, FC_SLANT);
 	FcPatternAddInteger(pattern, FC_SLANT, FC_SLANT_ITALIC);
 	if (xloadfont(&dc.ifont, pattern))
-		die("st: can't open font %s\n", fontstr);
+		die("stu: can't open font %s\n", fontstr);
 
 	FcPatternDel(pattern, FC_WEIGHT);
 	FcPatternAddInteger(pattern, FC_WEIGHT, FC_WEIGHT_BOLD);
 	if (xloadfont(&dc.ibfont, pattern))
-		die("st: can't open font %s\n", fontstr);
+		die("stu: can't open font %s\n", fontstr);
 
 	FcPatternDel(pattern, FC_SLANT);
 	FcPatternAddInteger(pattern, FC_SLANT, FC_SLANT_ROMAN);
 	if (xloadfont(&dc.bfont, pattern))
-		die("st: can't open font %s\n", fontstr);
+		die("stu: can't open font %s\n", fontstr);
 
 	FcPatternDestroy(pattern);
 }
@@ -4025,7 +4025,7 @@ xsettitle(char *p)
 void
 xresettitle(void)
 {
-	xsettitle(opt_title ? opt_title : "st");
+	xsettitle(opt_title ? opt_title : "stu");
 }
 
 void
@@ -4468,7 +4468,7 @@ main(int argc, char *argv[])
 		opt_embed = EARGF(usage());
 		break;
 	case 'v':
-		die("%s " VERSION " (c) 2010-2016 st engineers\n", argv0);
+		die("%s " VERSION " (c) 2010-2016 st engineers. (c) 2016 T.Thompson \n", argv0);
 		break;
 	default:
 		usage();
