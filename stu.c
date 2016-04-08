@@ -348,6 +348,10 @@ typedef struct {
 /* Config structure */
 typedef struct {
   char *colors[16];
+  int defaultfg;
+  int defaultbg;
+  int defaultcs;
+  int defaultrcs;
 } Config;
 
 /* Drawing Context */
@@ -509,7 +513,8 @@ static char *xstrdup(char *);
 static void usage(void);
 
 static void freecolors();
-static void loadconfig(char *);
+static int parseconfig(const char *);
+static void loadconfig(const char *);
 
 static void (*handler[LASTEvent])(XEvent *) = {
   [KeyPress] = kpress,
@@ -550,6 +555,7 @@ static Selection sel;
 static int iofd = 1;
 static char **opt_cmd  = NULL;
 static char *opt_class = NULL;
+static char *opt_config = NULL;
 static char *opt_embed = NULL;
 static char *opt_font  = NULL;
 static char *opt_io    = NULL;
@@ -1697,8 +1703,8 @@ treset(void)
 
   term.c = (TCursor){{
     .mode = ATTR_NULL,
-      .fg = defaultfg,
-      .bg = defaultbg
+      .fg = config.defaultfg,
+      .bg = config.defaultbg
   }, .x = 0, .y = 0, .state = CURSOR_DEFAULT};
 
   memset(term.tabs, 0, term.col * sizeof(*term.tabs));
@@ -1721,7 +1727,7 @@ treset(void)
   void
 tnew(int col, int row)
 {
-  term = (Term){ .c = { .attr = { .fg = defaultfg, .bg = defaultbg } } };
+  term = (Term){ .c = { .attr = { .fg = config.defaultfg, .bg = config.defaultbg } } };
   tresize(col, row);
   term.numlock = 1;
 
@@ -2105,8 +2111,8 @@ tsetattr(int *attr, int l)
             ATTR_REVERSE    |
             ATTR_INVISIBLE  |
             ATTR_STRUCK     );
-        term.c.attr.fg = defaultfg;
-        term.c.attr.bg = defaultbg;
+        term.c.attr.fg = config.defaultfg;
+        term.c.attr.bg = config.defaultbg;
         break;
       case 1:
         term.c.attr.mode |= ATTR_BOLD;
@@ -2160,14 +2166,14 @@ tsetattr(int *attr, int l)
           term.c.attr.fg = idx;
         break;
       case 39:
-        term.c.attr.fg = defaultfg;
+        term.c.attr.fg = config.defaultfg;
         break;
       case 48:
         if ((idx = tdefcolor(attr, &i, l)) >= 0)
           term.c.attr.bg = idx;
         break;
       case 49:
-        term.c.attr.bg = defaultbg;
+        term.c.attr.bg = config.defaultbg;
         break;
       default:
         if (BETWEEN(attr[i], 30, 37)) {
@@ -2607,7 +2613,7 @@ strhandle(void)
             fprintf(stderr, "erresc: invalid color %s\n", p);
           } else {
             /*
-             * TODO if defaultbg color is changed, borders
+             * TODO if config.defaultbg color is changed, borders
              * are dirty
              */
             redraw();
@@ -3324,7 +3330,7 @@ xsetcolorname(int x, const char *name)
 xclear(int x1, int y1, int x2, int y2)
 {
   XftDrawRect(xw.draw,
-      &dc.col[IS_SET(MODE_REVERSE)? defaultfg : defaultbg],
+      &dc.col[IS_SET(MODE_REVERSE)? config.defaultfg : config.defaultbg],
       x1, y1, x2-x1, y2-y1);
 }
 
@@ -3573,8 +3579,8 @@ xinit(void)
     xw.t += DisplayHeight(xw.dpy, xw.scr) - xw.h - 2;
 
   /* Events */
-  xw.attrs.background_pixel = dc.col[defaultbg].pixel;
-  xw.attrs.border_pixel = dc.col[defaultbg].pixel;
+  xw.attrs.background_pixel = dc.col[config.defaultbg].pixel;
+  xw.attrs.border_pixel = dc.col[config.defaultbg].pixel;
   xw.attrs.bit_gravity = NorthWestGravity;
   xw.attrs.event_mask = FocusChangeMask | KeyPressMask
     | ExposureMask | VisibilityChangeMask | StructureNotifyMask
@@ -3594,7 +3600,7 @@ xinit(void)
       &gcvalues);
   xw.buf = XCreatePixmap(xw.dpy, xw.win, xw.w, xw.h,
       DefaultDepth(xw.dpy, xw.scr));
-  XSetForeground(xw.dpy, dc.gc, dc.col[defaultbg].pixel);
+  XSetForeground(xw.dpy, dc.gc, dc.col[config.defaultbg].pixel);
   XFillRectangle(xw.dpy, xw.buf, dc.gc, 0, 0, xw.w, xw.h);
 
   /* Xft rendering context */
@@ -3794,7 +3800,7 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
   XRectangle r;
 
   /* Determine foreground and background colors based on mode. */
-  if (base.fg == defaultfg) {
+  if (base.fg == config.defaultfg) {
     if (base.mode & ATTR_ITALIC)
       base.fg = defaultitalic;
     else if ((base.mode & ATTR_ITALIC) && (base.mode & ATTR_BOLD))
@@ -3830,8 +3836,8 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
     fg = &dc.col[base.fg];
 
   if (IS_SET(MODE_REVERSE)) {
-    if (fg == &dc.col[defaultfg]) {
-      fg = &dc.col[defaultbg];
+    if (fg == &dc.col[config.defaultfg]) {
+      fg = &dc.col[config.defaultbg];
     } else {
       colfg.red = ~fg->color.red;
       colfg.green = ~fg->color.green;
@@ -3842,8 +3848,8 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
       fg = &revfg;
     }
 
-    if (bg == &dc.col[defaultbg]) {
-      bg = &dc.col[defaultfg];
+    if (bg == &dc.col[config.defaultbg]) {
+      bg = &dc.col[config.defaultfg];
     } else {
       colbg.red = ~bg->color.red;
       colbg.green = ~bg->color.green;
@@ -3932,7 +3938,7 @@ xdrawcursor(void)
 {
   static int oldx = 0, oldy = 0;
   int curx;
-  Glyph g = {' ', ATTR_NULL, defaultbg, defaultcs}, og;
+  Glyph g = {' ', ATTR_NULL, config.defaultbg, config.defaultcs}, og;
   int ena_sel = sel.ob.x != -1 && sel.alt == IS_SET(MODE_ALTSCREEN);
   Color drawcol;
 
@@ -3960,21 +3966,21 @@ xdrawcursor(void)
    */
   if (IS_SET(MODE_REVERSE)) {
     g.mode |= ATTR_REVERSE;
-    g.bg = defaultfg;
+    g.bg = config.defaultfg;
     if (ena_sel && selected(term.c.x, term.c.y)) {
-      drawcol = dc.col[defaultcs];
-      g.fg = defaultrcs;
+      drawcol = dc.col[config.defaultcs];
+      g.fg = config.defaultrcs;
     } else {
-      drawcol = dc.col[defaultrcs];
-      g.fg = defaultcs;
+      drawcol = dc.col[config.defaultrcs];
+      g.fg = config.defaultcs;
     }
   } else {
     if (ena_sel && selected(term.c.x, term.c.y)) {
-      drawcol = dc.col[defaultrcs];
-      g.fg = defaultfg;
-      g.bg = defaultrcs;
+      drawcol = dc.col[config.defaultrcs];
+      g.fg = config.defaultfg;
+      g.bg = config.defaultrcs;
     } else {
-      drawcol = dc.col[defaultcs];
+      drawcol = dc.col[config.defaultcs];
     }
   }
 
@@ -4063,7 +4069,7 @@ draw(void)
       xw.h, 0, 0);
   XSetForeground(xw.dpy, dc.gc,
       dc.col[IS_SET(MODE_REVERSE)?
-      defaultfg : defaultbg].pixel);
+      config.defaultfg : config.defaultbg].pixel);
 }
 
   void
@@ -4441,18 +4447,64 @@ usage(void)
       " [stty_args ...]\n", argv0, argv0);
 }
 
-  void
-loadconfig(char *conffile)
+  int
+parseconfig(const char *path)
 {
   cfg_opt_t opts[] =
   {
     CFG_STR_LIST("colors", defaultcolors, CFGF_NONE),
+    CFG_INT("defaultfg", 7, CFGF_NONE),
+    CFG_INT("defaultbg", 0, CFGF_NONE),
+    CFG_INT("defaultcs", 14, CFGF_NONE),
+    CFG_INT("defaultrcs", 15, CFGF_NONE),
     CFG_END()
   };
 
   cfg_t *cfg;
   cfg = cfg_init(opts, CFGF_NONE);
-  switch (cfg_parse(cfg, conffile)){
+  int output = cfg_parse(cfg, path);
+
+  for (int i = 0; i < cfg_size(cfg, "colors"); i++) {
+    config.colors[i] = xstrdup(cfg_getnstr(cfg, "colors", i));
+  }
+
+  config.defaultfg = cfg_getint(cfg, "defaultfg");
+  config.defaultbg = cfg_getint(cfg, "defaultbg");
+  config.defaultcs = cfg_getint(cfg, "defaultcs");
+  config.defaultrcs = cfg_getint(cfg, "defaultrcs");
+
+  cfg_free(cfg);
+  return output;
+}
+
+  void
+loadconfig(const char *conffile)
+{
+  const char * const home = getenv("HOME");
+  const char * const xdg_home = getenv("XDG_CONFIG_HOME");
+  char buf[PATH_MAX];
+
+  if (conffile) {
+    switch (parseconfig(conffile)){
+      case CFG_FILE_ERROR:
+        fprintf(stderr, "Failed to load config file %s. Loading defaults instead.\n", conffile);
+        break;
+      case CFG_PARSE_ERROR:
+        fprintf(stderr, "Config file %s is malformed. Loading defaults instead.\n", conffile);
+        break;
+    }
+    return;
+  }
+
+  if (home) {
+    if (xdg_home) {
+      snprintf(buf, PATH_MAX, "%s/stu/stu.conf", xdg_home);
+    } else {
+      snprintf(buf, PATH_MAX, "%s/.config/stu/stu.conf", home);
+    }
+  }
+
+  switch (parseconfig(buf)){
     case CFG_FILE_ERROR:
       fprintf(stderr, "Failed to load config file %s. Loading defaults instead.\n", conffile);
       break;
@@ -4460,11 +4512,6 @@ loadconfig(char *conffile)
       fprintf(stderr, "Config file %s is malformed. Loading defaults instead.\n", conffile);
       break;
   }
-  for (int i = 0; i < cfg_size(cfg, "colors"); i++) {
-    config.colors[i] = xstrdup(cfg_getnstr(cfg, "colors", i));
-  }
-  cfg_free(cfg);
-
   return;
 }
 
@@ -4477,14 +4524,15 @@ main(int argc, char *argv[])
   xw.isfixed = False;
   xw.cursor = cursorshape;
 
-  char *conffile = "stu.conf";
-  loadconfig(conffile);
   ARGBEGIN {
     case 'a':
       allowaltscreen = 0;
       break;
     case 'c':
       opt_class = EARGF(usage());
+      break;
+    case 'C':
+      opt_config = EARGF(usage());
       break;
     case 'e':
       if (argc > 0)
@@ -4530,6 +4578,7 @@ run:
     if (!opt_title && !opt_line)
       opt_title = basename(xstrdup(argv[0]));
   }
+  loadconfig(opt_config);
   setlocale(LC_CTYPE, "");
   XSetLocaleModifiers("");
   tnew(MAX(cols, 1), MAX(rows, 1));

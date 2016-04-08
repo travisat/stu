@@ -71,14 +71,6 @@ static char termname[] = "st-256color";
 static unsigned int tabspaces = 8;
 
 static char * defaultcolors = "{black, red3, green3, yellow3, blue2, magenta3, cyan3, gray90, gray50, red, green, yellow, \"#5c5cff\", magenta, cyan, white}";
-/*
- * Default colors (colorname index)
- * foreground, background, cursor, reverse cursor
- */
-static unsigned int defaultfg = 12;
-static unsigned int defaultbg = 8;
-static unsigned int defaultcs = 14;
-static unsigned int defaultrcs = 15;
 
 /*
  * Default shape of cursor
