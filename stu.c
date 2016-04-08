@@ -509,6 +509,8 @@ static char *xstrdup(char *);
 static void usage(void);
 
 static void freecolors();
+static void loadconfig(char *);
+static void loaddefaults();
 
 static void (*handler[LASTEvent])(XEvent *) = {
   [KeyPress] = kpress,
@@ -4440,6 +4442,47 @@ usage(void)
       " [stty_args ...]\n", argv0, argv0);
 }
 
+  void
+loaddefaults()
+{
+  for (int i = 0; i < 16 ; i++ ) {
+    config.colors[i] = xstrdup(defaultcolors[i]);
+  }
+  return;
+}
+
+
+
+  void
+loadconfig(char *conffile)
+{
+  cfg_opt_t opts[] =
+  {
+    CFG_STR_LIST("colors", "{black}", CFGF_NONE),
+    CFG_END()
+  };
+
+  cfg_t *cfg;
+  cfg = cfg_init(opts, CFGF_NONE);
+  switch (cfg_parse(cfg, conffile)){
+    case CFG_FILE_ERROR:
+      fprintf(stderr, "Failed to load config file %s. Loading defaults instead.\n", conffile);
+      loaddefaults();
+      break;
+    case CFG_PARSE_ERROR:
+      fprintf(stderr, "Config file %s is malformed. Loading defaults instead.\n", conffile);
+      loaddefaults();
+      break;
+    default:
+      for (int i = 0; i < cfg_size(cfg, "colors"); i++) {
+        config.colors[i] = xstrdup(cfg_getnstr(cfg, "colors", i));
+      }
+  }
+  cfg_free(cfg);
+
+  return;
+}
+
   int
 main(int argc, char *argv[])
 {
@@ -4449,27 +4492,8 @@ main(int argc, char *argv[])
   xw.isfixed = False;
   xw.cursor = cursorshape;
 
-  cfg_opt_t opts[] =
-  {
-    CFG_STR_LIST("colors", "{black}", CFGF_NONE),
-    CFG_END()
-  };
-
-  cfg_t *cfg;
-  cfg = cfg_init(opts, CFGF_NONE);
-  const char *conffile = "stu.conf";
-  if (cfg_parse(cfg, conffile) == CFG_PARSE_ERROR){
-    die("Failed to load config file %s", conffile);
-  }
-  for (int i = 0; i < cfg_size(cfg, "colors"); i++) {
-    config.colors[i] = xstrdup(cfg_getnstr(cfg, "colors", i));
-  }
-  cfg_free(cfg);
-
-  //for (int i = 0; i < 16 ; i++ ) {
-  //  config.colors[i] = xstrdup(defaultcolors[i]);
-  //}
-
+  char *conffile = "stu.conf";
+  loadconfig(conffile);
   ARGBEGIN {
     case 'a':
       allowaltscreen = 0;
