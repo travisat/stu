@@ -346,12 +346,12 @@ typedef struct {
 
 /* Config structure */
 typedef struct {
-  char colorname[16][8];
+  char *colorname[16];
 } Config;
 
 /* Drawing Context */
 typedef struct {
-//  Color col[MAX(LEN(colorname), 256)]; TODO: setup for > 256 colors
+  //  Color col[MAX(LEN(colorname), 256)]; TODO: setup for > 256 colors
   Color col[256];
   Font font, bfont, ifont, ibfont;
   GC gc;
@@ -562,6 +562,29 @@ static uchar utfbyte[UTF_SIZ + 1] = {0x80,    0, 0xC0, 0xE0, 0xF0};
 static uchar utfmask[UTF_SIZ + 1] = {0xC0, 0x80, 0xE0, 0xF0, 0xF8};
 static Rune utfmin[UTF_SIZ + 1] = {       0,    0,  0x80,  0x800,  0x10000};
 static Rune utfmax[UTF_SIZ + 1] = {0x10FFFF, 0x7F, 0x7FF, 0xFFFF, 0x10FFFF};
+
+static char *defaultcolors[] = {
+  /* 8 normal colors */
+  "black",
+  "red3",
+  "green3",
+  "yellow3",
+  "blue2",
+  "magenta3",
+  "cyan3",
+  "gray90",
+
+  /* 8 bright colors */
+  "gray50",
+  "red",
+  "green",
+  "yellow",
+  "#5c5cff",
+  "magenta",
+  "cyan",
+  "white",
+};
+
 
 /* Font Ring Cache */
 enum {
@@ -4438,7 +4461,7 @@ main(int argc, char *argv[])
   xw.cursor = cursorshape;
 
   for (int i = 0; i < 16 ; i++ ) {
-    strcpy(config.colorname[i], defaultcolorname[i]);
+    config.colorname[i] = xstrdup(defaultcolors[i]);
   }
 
   ARGBEGIN {

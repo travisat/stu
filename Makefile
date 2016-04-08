@@ -14,14 +14,11 @@ options:
 	@echo "LDFLAGS  = ${LDFLAGS}"
 	@echo "CC       = ${CC}"
 
-config.h:
-	cp config.def.h config.h
-
 .c.o:
 	@echo CC $<
 	@${CC} -c ${CFLAGS} $<
 
-${OBJ}: config.h config.mk
+${OBJ}: config.mk
 
 stu: ${OBJ}
 	@echo CC -o $@
@@ -34,7 +31,7 @@ clean:
 dist: clean
 	@echo creating dist tarball
 	@mkdir -p stu-${VERSION}
-	@cp -R LICENSE Makefile README config.mk config.def.h stu.info stu.1 arg.h ${SRC} stu-${VERSION}
+	@cp -R LICENSE Makefile README config.mk config.h stu.info stu.1 arg.h ${SRC} stu-${VERSION}
 	@tar -cf stu-${VERSION}.tar stu-${VERSION}
 	@gzip stu-${VERSION}.tar
 	@rm -rf stu-${VERSION}
