@@ -510,7 +510,6 @@ static void usage(void);
 
 static void freecolors();
 static void loadconfig(char *);
-static void loaddefaults();
 
 static void (*handler[LASTEvent])(XEvent *) = {
   [KeyPress] = kpress,
@@ -4443,22 +4442,11 @@ usage(void)
 }
 
   void
-loaddefaults()
-{
-  for (int i = 0; i < 16 ; i++ ) {
-    config.colors[i] = xstrdup(defaultcolors[i]);
-  }
-  return;
-}
-
-
-
-  void
 loadconfig(char *conffile)
 {
   cfg_opt_t opts[] =
   {
-    CFG_STR_LIST("colors", "{black}", CFGF_NONE),
+    CFG_STR_LIST("colors", defaultcolors, CFGF_NONE),
     CFG_END()
   };
 
@@ -4467,16 +4455,13 @@ loadconfig(char *conffile)
   switch (cfg_parse(cfg, conffile)){
     case CFG_FILE_ERROR:
       fprintf(stderr, "Failed to load config file %s. Loading defaults instead.\n", conffile);
-      loaddefaults();
       break;
     case CFG_PARSE_ERROR:
       fprintf(stderr, "Config file %s is malformed. Loading defaults instead.\n", conffile);
-      loaddefaults();
       break;
-    default:
-      for (int i = 0; i < cfg_size(cfg, "colors"); i++) {
-        config.colors[i] = xstrdup(cfg_getnstr(cfg, "colors", i));
-      }
+  }
+  for (int i = 0; i < cfg_size(cfg, "colors"); i++) {
+    config.colors[i] = xstrdup(cfg_getnstr(cfg, "colors", i));
   }
   cfg_free(cfg);
 

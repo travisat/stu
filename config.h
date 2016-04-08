@@ -70,29 +70,7 @@ static char termname[] = "st-256color";
 
 static unsigned int tabspaces = 8;
 
-/* default colors up to 256. Note diff than st as stu cannot go above 256 colors yet. */
-static char *defaultcolors[] = {
-  /* 8 normal colors */
-  "black",
-  "red3",
-  "green3",
-  "yellow3",
-  "blue2",
-  "magenta3",
-  "cyan3",
-  "gray90",
-
-  /* 8 bright colors */
-  "gray50",
-  "red",
-  "green",
-  "yellow",
-  "#5c5cff",
-  "magenta",
-  "cyan",
-  "white",
-};
-
+static char * defaultcolors = "{black, red3, green3, yellow3, blue2, magenta3, cyan3, gray90, gray50, red, green, yellow, \"#5c5cff\", magenta, cyan, white}";
 /*
  * Default colors (colorname index)
  * foreground, background, cursor, reverse cursor
