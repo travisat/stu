@@ -346,7 +346,7 @@ typedef struct {
 
 /* Config structure */
 typedef struct {
-  char *colorname[16];
+  char *colors[16];
 } Config;
 
 /* Drawing Context */
@@ -507,6 +507,8 @@ static char *xstrdup(char *);
 
 static void usage(void);
 
+static void freecolors();
+
 static void (*handler[LASTEvent])(XEvent *) = {
   [KeyPress] = kpress,
   [ClientMessage] = cmessage,
@@ -603,6 +605,15 @@ typedef struct {
 /* Fontcache is an array now. A new font will be appended to the array. */
 static Fontcache frc[16];
 static int frclen = 0;
+
+  void
+freecolors()
+{
+    for (int i = 0; i < 16; i++) {
+      free(config.colors[i]);
+    }
+  return;
+}
 
   ssize_t
 xwrite(int fd, const char *s, size_t len)
@@ -3281,7 +3292,7 @@ xloadcolor(int i, const char *name, Color *ncolor)
       return XftColorAllocValue(xw.dpy, xw.vis,
           xw.cmap, &color, ncolor);
     } else
-      name = config.colorname[i];
+      name = config.colors[i];
   }
 
   return XftColorAllocName(xw.dpy, xw.vis, xw.cmap, name, ncolor);
@@ -3301,8 +3312,8 @@ xloadcols(void)
 
   for (i = 0; i < LEN(dc.col); i++)
     if (!xloadcolor(i, NULL, &dc.col[i])) {
-      if (config.colorname[i])
-        die("Could not allocate color '%s'\n", config.colorname[i]);
+      if (config.colors[i])
+        die("Could not allocate color '%s'\n", config.colors[i]);
       else
         die("Could not allocate color %d\n", i);
     }
@@ -3632,13 +3643,13 @@ xinit(void)
   cursor = XCreateFontCursor(xw.dpy, mouseshape);
   XDefineCursor(xw.dpy, xw.win, cursor);
 
-  if (XParseColor(xw.dpy, xw.cmap, config.colorname[mousefg], &xmousefg) == 0) {
+  if (XParseColor(xw.dpy, xw.cmap, config.colors[mousefg], &xmousefg) == 0) {
     xmousefg.red   = 0xffff;
     xmousefg.green = 0xffff;
     xmousefg.blue  = 0xffff;
   }
 
-  if (XParseColor(xw.dpy, xw.cmap, config.colorname[mousebg], &xmousebg) == 0) {
+  if (XParseColor(xw.dpy, xw.cmap, config.colors[mousebg], &xmousebg) == 0) {
     xmousebg.red   = 0x0000;
     xmousebg.green = 0x0000;
     xmousebg.blue  = 0x0000;
@@ -4461,7 +4472,7 @@ main(int argc, char *argv[])
   xw.cursor = cursorshape;
 
   for (int i = 0; i < 16 ; i++ ) {
-    config.colorname[i] = xstrdup(defaultcolors[i]);
+    config.colors[i] = xstrdup(defaultcolors[i]);
   }
 
   ARGBEGIN {
@@ -4521,6 +4532,7 @@ run:
   xinit();
   selinit();
   run();
+  freecolors();
 
   return 0;
 }
