@@ -347,6 +347,7 @@ typedef struct {
 
 /* Config structure */
 typedef struct {
+  char *font;
   char *colors[16];
   int defaultfg;
   int defaultbg;
@@ -512,7 +513,7 @@ static char *xstrdup(char *);
 
 static void usage(void);
 
-static void freecolors();
+static void freeconfig();
 static int parseconfig(const char *);
 static void loadconfig(const char *);
 
@@ -592,8 +593,9 @@ static Fontcache frc[16];
 static int frclen = 0;
 
   void
-freecolors()
+freeconfig()
 {
+  free(config.font);
   for (int i = 0; i < 16; i++) {
     free(config.colors[i]);
   }
@@ -3563,7 +3565,7 @@ xinit(void)
   if (!FcInit())
     die("Could not init fontconfig.\n");
 
-  usedfont = (opt_font == NULL)? font : opt_font;
+  usedfont = (opt_font == NULL)? config.font : opt_font;
   xloadfonts(usedfont, 0);
 
   /* colors */
@@ -4452,6 +4454,7 @@ parseconfig(const char *path)
 {
   cfg_opt_t opts[] =
   {
+    CFG_STR("font","Liberation Mono:pixelsize=12:antialias=true:autohint=true",CFGF_NONE),
     CFG_STR_LIST("colors", defaultcolors, CFGF_NONE),
     CFG_INT("defaultfg", 7, CFGF_NONE),
     CFG_INT("defaultbg", 0, CFGF_NONE),
@@ -4463,6 +4466,8 @@ parseconfig(const char *path)
   cfg_t *cfg;
   cfg = cfg_init(opts, CFGF_NONE);
   int output = cfg_parse(cfg, path);
+
+  config.font = xstrdup(cfg_getstr(cfg, "font"));
 
   for (int i = 0; i < cfg_size(cfg, "colors"); i++) {
     config.colors[i] = xstrdup(cfg_getnstr(cfg, "colors", i));
@@ -4584,7 +4589,7 @@ run:
   xinit();
   selinit();
   run();
-  freecolors();
+  freeconfig();
 
   return 0;
 }
