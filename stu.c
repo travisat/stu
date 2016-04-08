@@ -4437,11 +4437,11 @@ run(void)
   void
 usage(void)
 {
-  die("usage: %s [-aiv] [-c class] [-f font] [-g geometry]"
+  die("usage: %s [-aiv] [-c class] [-C config] [-f font] [-g geometry]"
       " [-n name] [-o file]\n"
       "          [-T title] [-t title] [-w windowid]"
       " [[-e] command [args ...]]\n"
-      "       %s [-aiv] [-c class] [-f font] [-g geometry]"
+      "       %s [-aiv] [-c class] [-C config] [-f font] [-g geometry]"
       " [-n name] [-o file]\n"
       "          [-T title] [-t title] [-w windowid] -l line"
       " [stty_args ...]\n", argv0, argv0);
@@ -4484,6 +4484,7 @@ loadconfig(const char *conffile)
   const char * const xdg_home = getenv("XDG_CONFIG_HOME");
   char buf[PATH_MAX];
 
+  //load conffile if -C was called otherwise NULL is passed
   if (conffile) {
     switch (parseconfig(conffile)){
       case CFG_FILE_ERROR:
@@ -4496,6 +4497,7 @@ loadconfig(const char *conffile)
     return;
   }
 
+  //load conf location from $XDG_HOME or ~/.config/stu/stu.conf
   if (home) {
     if (xdg_home) {
       snprintf(buf, PATH_MAX, "%s/stu/stu.conf", xdg_home);
@@ -4504,14 +4506,11 @@ loadconfig(const char *conffile)
     }
   }
 
-  switch (parseconfig(buf)){
-    case CFG_FILE_ERROR:
-      fprintf(stderr, "Failed to load config file %s. Loading defaults instead.\n", conffile);
-      break;
-    case CFG_PARSE_ERROR:
+  //load config file from stu.conf or default if conf is malformed
+  if (parseconfig(buf) == CFG_PARSE_ERROR) {
       fprintf(stderr, "Config file %s is malformed. Loading defaults instead.\n", conffile);
-      break;
   }
+
   return;
 }
 
