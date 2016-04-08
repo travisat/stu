@@ -566,29 +566,6 @@ static uchar utfmask[UTF_SIZ + 1] = {0xC0, 0x80, 0xE0, 0xF0, 0xF8};
 static Rune utfmin[UTF_SIZ + 1] = {       0,    0,  0x80,  0x800,  0x10000};
 static Rune utfmax[UTF_SIZ + 1] = {0x10FFFF, 0x7F, 0x7FF, 0xFFFF, 0x10FFFF};
 
-static char *defaultcolors[] = {
-  /* 8 normal colors */
-  "black",
-  "red3",
-  "green3",
-  "yellow3",
-  "blue2",
-  "magenta3",
-  "cyan3",
-  "gray90",
-
-  /* 8 bright colors */
-  "gray50",
-  "red",
-  "green",
-  "yellow",
-  "#5c5cff",
-  "magenta",
-  "cyan",
-  "white",
-};
-
-
 /* Font Ring Cache */
 enum {
   FRC_NORMAL,
