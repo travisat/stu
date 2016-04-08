@@ -30,6 +30,7 @@
 #include <X11/XKBlib.h>
 #include <fontconfig/fontconfig.h>
 #include <wchar.h>
+#include <confuse.h>
 
 #include "arg.h"
 
@@ -609,9 +610,9 @@ static int frclen = 0;
   void
 freecolors()
 {
-    for (int i = 0; i < 16; i++) {
-      free(config.colors[i]);
-    }
+  for (int i = 0; i < 16; i++) {
+    free(config.colors[i]);
+  }
   return;
 }
 
@@ -4471,9 +4472,26 @@ main(int argc, char *argv[])
   xw.isfixed = False;
   xw.cursor = cursorshape;
 
-  for (int i = 0; i < 16 ; i++ ) {
-    config.colors[i] = xstrdup(defaultcolors[i]);
+  cfg_opt_t opts[] =
+  {
+    CFG_STR_LIST("colors", "{black}", CFGF_NONE),
+    CFG_END()
+  };
+
+  cfg_t *cfg;
+  cfg = cfg_init(opts, CFGF_NONE);
+  const char *conffile = "stu.conf";
+  if (cfg_parse(cfg, conffile) == CFG_PARSE_ERROR){
+    die("Failed to load config file %s", conffile);
   }
+  for (int i = 0; i < cfg_size(cfg, "colors"); i++) {
+    config.colors[i] = xstrdup(cfg_getnstr(cfg, "colors", i));
+  }
+  cfg_free(cfg);
+
+  //for (int i = 0; i < 16 ; i++ ) {
+  //  config.colors[i] = xstrdup(defaultcolors[i]);
+  //}
 
   ARGBEGIN {
     case 'a':

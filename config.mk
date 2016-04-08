@@ -16,6 +16,7 @@ INCS = -I. -I/usr/include -I${X11INC} \
        `pkg-config --cflags freetype2`
 LIBS = -L/usr/lib -lc -L${X11LIB} -lm -lrt -lX11 -lutil -lXft \
        `pkg-config --libs fontconfig`  \
+       `pkg-config --libs libconfuse`  \
        `pkg-config --libs freetype2`
 
 # flags
