@@ -3,7 +3,7 @@
 
 include config.mk
 
-SRC = stu.c
+SRC = $(wildcard src/*.c)
 OBJ = ${SRC:.c=.o}
 
 all: options stu
@@ -16,7 +16,7 @@ options:
 
 .c.o:
 	@echo CC $<
-	@${CC} -c ${CFLAGS} $<
+	@${CC} ${CFLAGS} -c -o $@ $<
 
 ${OBJ}: config.mk
 
