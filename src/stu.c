@@ -33,6 +33,7 @@
 #include <confuse.h>
 
 #include "arg.h"
+#include "keyboard.h"
 
 char *argv0;
 
@@ -59,10 +60,6 @@ char *argv0;
 #define ESC_ARG_SIZ   16
 #define STR_BUF_SIZ   ESC_BUF_SIZ
 #define STR_ARG_SIZ   ESC_ARG_SIZ
-#define XK_ANY_MOD    UINT_MAX
-#define XK_NO_MOD     0
-#define XK_SWITCH_MOD (1<<13)
-
 /* macros */
 #define MIN(a, b)   ((a) < (b) ? (a) : (b))
 #define MAX(a, b)   ((a) < (b) ? (b) : (a))
@@ -262,16 +259,6 @@ typedef struct {
 } MouseShortcut;
 
 typedef struct {
-  KeySym k;
-  uint mask;
-  char *s;
-  /* three valued logic variables: 0 indifferent, 1 on, -1 off */
-  signed char appkey;    /* application keypad */
-  signed char appcursor; /* application cursor */
-  signed char crlf;      /* crlf mode          */
-} Key;
-
-typedef struct {
   int mode;
   int type;
   int snap;
@@ -293,41 +280,12 @@ typedef struct {
   struct timespec tclick2;
 } Selection;
 
-typedef union {
-  int i;
-  uint ui;
-  float f;
-  const void *v;
-} Arg;
-
 typedef struct {
   uint b;
   uint mask;
   void (*func)(const Arg *);
   const Arg arg;
 } MouseKey;
-
-typedef struct {
-  uint mod;
-  KeySym keysym;
-  void (*func)(const Arg *);
-  const Arg arg;
-} Shortcut;
-
-/* function definitions used in config.h */
-static void clipcopy(const Arg *);
-static void clippaste(const Arg *);
-static void kscrolldown(const Arg *);
-static void kscrollup(const Arg *);
-static void numlock(const Arg *);
-static void selpaste(const Arg *);
-static void xzoom(const Arg *);
-static void xzoomabs(const Arg *);
-static void xzoomreset(const Arg *);
-static void printsel(const Arg *);
-static void printscreen(const Arg *) ;
-static void toggleprinter(const Arg *);
-static void sendbreak(const Arg *);
 
 /* Config.h for applying patches and the configuration. */
 #include "config.h"
@@ -353,6 +311,8 @@ typedef struct {
   int defaultbg;
   int defaultcs;
   int defaultrcs;
+  int borderpx;
+  char *shell;
 } Config;
 
 /* Drawing Context */
@@ -753,7 +713,7 @@ selinit(void)
   int
 x2col(int x)
 {
-  x -= borderpx;
+  x -= config.borderpx;
   x /= xw.cw;
 
   return LIMIT(x, 0, term.col-1);
@@ -762,7 +722,7 @@ x2col(int x)
   int
 y2row(int y)
 {
-  y -= borderpx;
+  y -= config.borderpx;
   y /= xw.ch;
 
   return LIMIT(y, 0, term.row-1);
@@ -1389,7 +1349,7 @@ execsh(void)
   }
 
   if ((sh = getenv("SHELL")) == NULL)
-    sh = (pw->pw_shell[0]) ? pw->pw_shell : shell;
+    sh = (pw->pw_shell[0]) ? pw->pw_shell : config.shell;
 
   if (opt_cmd)
     prog = opt_cmd[0];
@@ -3351,8 +3311,8 @@ xhints(void)
   sizeh->width = xw.w;
   sizeh->height_inc = xw.ch;
   sizeh->width_inc = xw.cw;
-  sizeh->base_height = 2 * borderpx;
-  sizeh->base_width = 2 * borderpx;
+  sizeh->base_height = 2 * config.borderpx;
+  sizeh->base_width = 2 * config.borderpx;
   if (xw.isfixed) {
     sizeh->flags |= PMaxSize | PMinSize;
     sizeh->min_width = sizeh->max_width = xw.w;
@@ -3573,8 +3533,8 @@ xinit(void)
   xloadcols();
 
   /* adjust fixed window geometry */
-  xw.w = 2 * borderpx + term.col * xw.cw;
-  xw.h = 2 * borderpx + term.row * xw.ch;
+  xw.w = 2 * config.borderpx + term.col * xw.cw;
+  xw.h = 2 * config.borderpx + term.row * xw.ch;
   if (xw.gm & XNegative)
     xw.l += DisplayWidth(xw.dpy, xw.scr) - xw.w - 2;
   if (xw.gm & YNegative)
@@ -3662,7 +3622,7 @@ xinit(void)
   int
 xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x, int y)
 {
-  float winx = borderpx + x * xw.cw, winy = borderpx + y * xw.ch, xp, yp;
+  float winx = config.borderpx + x * xw.cw, winy = config.borderpx + y * xw.ch, xp, yp;
   ushort mode, prevmode = USHRT_MAX;
   Font *font = &dc.font;
   int frcflags = FRC_NORMAL;
@@ -3795,7 +3755,7 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, int y)
 {
   int charlen = len * ((base.mode & ATTR_WIDE) ? 2 : 1);
-  int winx = borderpx + x * xw.cw, winy = borderpx + y * xw.ch,
+  int winx = config.borderpx + x * xw.cw, winy = config.borderpx + y * xw.ch,
       width = charlen * xw.cw;
   Color *fg, *bg, *temp, revfg, revbg, truefg, truebg;
   XRenderColor colfg, colbg;
@@ -3885,7 +3845,7 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 
   /* Intelligent cleaning up of the borders. */
   if (x == 0) {
-    xclear(0, (y == 0)? 0 : winy, borderpx,
+    xclear(0, (y == 0)? 0 : winy, config.borderpx,
         winy + xw.ch + ((y >= term.row-1)? xw.h : 0));
   }
   if (x + charlen >= term.col) {
@@ -3893,7 +3853,7 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
         ((y >= term.row-1)? xw.h : (winy + xw.ch)));
   }
   if (y == 0)
-    xclear(winx, 0, winx + width, borderpx);
+    xclear(winx, 0, winx + width, config.borderpx);
   if (y == term.row-1)
     xclear(winx, winy + xw.ch, winx + width, xw.h);
 
@@ -4003,35 +3963,35 @@ xdrawcursor(void)
       case 3: /* Blinking Underline */
       case 4: /* Steady Underline */
         XftDrawRect(xw.draw, &drawcol,
-            borderpx + curx * xw.cw,
-            borderpx + (term.c.y + 1) * xw.ch - \
+            config.borderpx + curx * xw.cw,
+            config.borderpx + (term.c.y + 1) * xw.ch - \
             cursorthickness,
             xw.cw, cursorthickness);
         break;
       case 5: /* Blinking bar */
       case 6: /* Steady bar */
         XftDrawRect(xw.draw, &drawcol,
-            borderpx + curx * xw.cw,
-            borderpx + term.c.y * xw.ch,
+            config.borderpx + curx * xw.cw,
+            config.borderpx + term.c.y * xw.ch,
             cursorthickness, xw.ch);
         break;
     }
   } else {
     XftDrawRect(xw.draw, &drawcol,
-        borderpx + curx * xw.cw,
-        borderpx + term.c.y * xw.ch,
+        config.borderpx + curx * xw.cw,
+        config.borderpx + term.c.y * xw.ch,
         xw.cw - 1, 1);
     XftDrawRect(xw.draw, &drawcol,
-        borderpx + curx * xw.cw,
-        borderpx + term.c.y * xw.ch,
+        config.borderpx + curx * xw.cw,
+        config.borderpx + term.c.y * xw.ch,
         1, xw.ch - 1);
     XftDrawRect(xw.draw, &drawcol,
-        borderpx + (curx + 1) * xw.cw - 1,
-        borderpx + term.c.y * xw.ch,
+        config.borderpx + (curx + 1) * xw.cw - 1,
+        config.borderpx + term.c.y * xw.ch,
         1, xw.ch - 1);
     XftDrawRect(xw.draw, &drawcol,
-        borderpx + curx * xw.cw,
-        borderpx + (term.c.y + 1) * xw.ch - 1,
+        config.borderpx + curx * xw.cw,
+        config.borderpx + (term.c.y + 1) * xw.ch - 1,
         xw.cw, 1);
   }
   oldx = curx, oldy = term.c.y;
@@ -4310,8 +4270,8 @@ cresize(int width, int height)
   if (height != 0)
     xw.h = height;
 
-  col = (xw.w - 2 * borderpx) / xw.cw;
-  row = (xw.h - 2 * borderpx) / xw.ch;
+  col = (xw.w - 2 * config.borderpx) / xw.cw;
+  row = (xw.h - 2 * config.borderpx) / xw.ch;
 
   tresize(col, row);
   xresize(col, row);
@@ -4460,6 +4420,8 @@ parseconfig(const char *path)
     CFG_INT("defaultbg", 0, CFGF_NONE),
     CFG_INT("defaultcs", 14, CFGF_NONE),
     CFG_INT("defaultrcs", 15, CFGF_NONE),
+    CFG_INT("borderpx", 2, CFGF_NONE),
+    CFG_STR("shell", "/bin/sh", CFGF_NONE),
     CFG_END()
   };
 
@@ -4477,6 +4439,9 @@ parseconfig(const char *path)
   config.defaultbg = cfg_getint(cfg, "defaultbg");
   config.defaultcs = cfg_getint(cfg, "defaultcs");
   config.defaultrcs = cfg_getint(cfg, "defaultrcs");
+  config.borderpx = cfg_getint(cfg, "borderpx");
+
+  config.shell = xstrdup(cfg_getstr(cfg, "shell"));
 
   cfg_free(cfg);
   return output;
