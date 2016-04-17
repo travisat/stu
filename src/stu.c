@@ -33,7 +33,9 @@
 #include <confuse.h>
 
 #include "arg.h"
-#include "keyboard.h"
+#include "stu.h"
+#include "keys.h"
+#include "config.h"
 
 char *argv0;
 
@@ -181,15 +183,21 @@ enum selection_snap {
   SNAP_LINE = 2
 };
 
-typedef unsigned char uchar;
-typedef unsigned int uint;
-typedef unsigned long ulong;
-typedef unsigned short ushort;
-
-typedef uint_least32_t Rune;
+/*
+ * Selection types' masks.
+ * Use the same masks as usual.
+ * Button1Mask is always unset, to make masks match between ButtonPress.
+ * ButtonRelease and MotionNotify.
+ * If no match is found, regular selection is used.
+ */
+static uint selmasks[] = {
+  [SEL_RECTANGULAR] = Mod1Mask,
+};
 
 typedef XftDraw *Draw;
 typedef XftColor Color;
+
+typedef uint_least32_t Rune;
 
 typedef struct {
   Rune u;           /* character code */
@@ -253,12 +261,6 @@ typedef struct {
 } XWindow;
 
 typedef struct {
-  uint b;
-  uint mask;
-  char *s;
-} MouseShortcut;
-
-typedef struct {
   int mode;
   int type;
   int snap;
@@ -279,16 +281,6 @@ typedef struct {
   struct timespec tclick1;
   struct timespec tclick2;
 } Selection;
-
-typedef struct {
-  uint b;
-  uint mask;
-  void (*func)(const Arg *);
-  const Arg arg;
-} MouseKey;
-
-/* Config.h for applying patches and the configuration. */
-#include "config.h"
 
 /* Font structure */
 typedef struct {

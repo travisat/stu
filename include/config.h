@@ -81,33 +81,6 @@ static unsigned int defaultitalic = 11;
 static unsigned int defaultunderline = 7;
 
 /*
- * Internal mouse shortcuts.
- * Beware that overloading Button1 will disable the selection.
- */
-static MouseShortcut mshortcuts[] = {
-  /* button               mask            string */
-  { Button4,              XK_NO_MOD,      "\031" },
-  { Button5,              XK_NO_MOD,      "\005" },
-};
-
-static MouseKey mkeys[] = {
-  /* button               mask            function        argument */
-  { Button4,              ShiftMask,      kscrollup,      {.i =  1} },
-  { Button5,              ShiftMask,      kscrolldown,    {.i =  1} },
-};
-
-/*
- * Selection types' masks.
- * Use the same masks as usual.
- * Button1Mask is always unset, to make masks match between ButtonPress.
- * ButtonRelease and MotionNotify.
- * If no match is found, regular selection is used.
- */
-static uint selmasks[] = {
-  [SEL_RECTANGULAR] = Mod1Mask,
-};
-
-/*
  * Printable characters in ASCII, used to estimate the advance width
  * of single wide characters.
  */
