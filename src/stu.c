@@ -87,7 +87,11 @@ char *argv0;
 #define TRUEGREEN(x)    (((x) & 0xff00))
 #define TRUEBLUE(x)   (((x) & 0xff) << 8)
 #define TLINE(y)    ((y) < term.scr ? term.hist[((y) + term.histi - term.scr \
+<<<<<<< HEAD
                          + histsize + 1) % histsize] : term.line[(y) - term.scr])
+=======
+                                                 + histsize + 1) % histsize] : term.line[(y) - term.scr])
+>>>>>>> 851601a73a9eb434d7665877de292d2cdf066b37
 
 
 enum glyph_attribute {
@@ -4284,10 +4288,13 @@ int parseconfig(const char *path)
       CFG_INT("defaultrcs", 15, CFGF_NONE),
       CFG_INT("borderpx", 2, CFGF_NONE),
       CFG_STR("shell", "/bin/sh", CFGF_NONE),
+<<<<<<< HEAD
       CFG_FLOAT("cwscale", 1.0, CFGF_NONE),
       CFG_FLOAT("chscale", 1.0, CFGF_NONE),
       CFG_INT("doubleclicktimeout", 300, CFGF_NONE),
       CFG_INT("tripleclicktimeout", 300, CFGF_NONE),
+=======
+>>>>>>> 851601a73a9eb434d7665877de292d2cdf066b37
       CFG_END()
     };
 
