@@ -87,7 +87,7 @@ char *argv0;
 #define TRUEGREEN(x)    (((x) & 0xff00))
 #define TRUEBLUE(x)   (((x) & 0xff) << 8)
 #define TLINE(y)    ((y) < term.scr ? term.hist[((y) + term.histi - term.scr \
-                                                 + histsize + 1) % histsize] : term.line[(y) - term.scr])
+                         + histsize + 1) % histsize] : term.line[(y) - term.scr])
 
 
 enum glyph_attribute {
@@ -305,6 +305,10 @@ typedef struct {
   int defaultrcs;
   int borderpx;
   char *shell;
+  float cwscale;
+  float chscale;
+  int doubleclicktimeout;
+  int tripleclicktimeout;
 } Config;
 
 /* Drawing Context */
@@ -550,6 +554,7 @@ void freeconfig()
   for (int i = 0; i < 16; i++) {
     free(config.colors[i]);
   }
+  free(config.shell);
   return;
 }
 
@@ -956,9 +961,9 @@ void bpress(XEvent *e)
      * If the user clicks below predefined timeouts specific
      * snapping behaviour is exposed.
      */
-    if (TIMEDIFF(now, sel.tclick2) <= tripleclicktimeout) {
+    if (TIMEDIFF(now, sel.tclick2) <= config.tripleclicktimeout) {
       sel.snap = SNAP_LINE;
-    } else if (TIMEDIFF(now, sel.tclick1) <= doubleclicktimeout) {
+    } else if (TIMEDIFF(now, sel.tclick1) <= config.doubleclicktimeout) {
       sel.snap = SNAP_WORD;
     } else {
       sel.snap = 0;
@@ -3322,8 +3327,8 @@ void xloadfonts(char *fontstr, double fontsize)
   }
 
   /* Setting character width and height. */
-  xw.cw = ceilf(dc.font.width * cwscale);
-  xw.ch = ceilf(dc.font.height * chscale);
+  xw.cw = ceilf(dc.font.width * config.cwscale);
+  xw.ch = ceilf(dc.font.height * config.chscale);
 
   FcPatternDel(pattern, FC_SLANT);
   FcPatternAddInteger(pattern, FC_SLANT, FC_SLANT_ITALIC);
@@ -4279,6 +4284,10 @@ int parseconfig(const char *path)
       CFG_INT("defaultrcs", 15, CFGF_NONE),
       CFG_INT("borderpx", 2, CFGF_NONE),
       CFG_STR("shell", "/bin/sh", CFGF_NONE),
+      CFG_FLOAT("cwscale", 1.0, CFGF_NONE),
+      CFG_FLOAT("chscale", 1.0, CFGF_NONE),
+      CFG_INT("doubleclicktimeout", 300, CFGF_NONE),
+      CFG_INT("tripleclicktimeout", 300, CFGF_NONE),
       CFG_END()
     };
 
@@ -4297,6 +4306,10 @@ int parseconfig(const char *path)
   config.defaultcs = cfg_getint(cfg, "defaultcs");
   config.defaultrcs = cfg_getint(cfg, "defaultrcs");
   config.borderpx = cfg_getint(cfg, "borderpx");
+  config.cwscale = cfg_getfloat(cfg, "cwscale");
+  config.chscale = cfg_getfloat(cfg, "chscale");
+  config.doubleclicktimeout = cfg_getint(cfg, "doubleclicktimeout");
+  config.tripleclicktimeout = cfg_getint(cfg, "tripleclicktimeout");
 
   config.shell = xstrdup(cfg_getstr(cfg, "shell"));
 

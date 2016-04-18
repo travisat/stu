@@ -10,20 +10,12 @@ static char stty_args[] = "stty raw pass8 nl -echo -iexten -cstopb 38400";
 /* identification sequence returned in DA and DECID */
 static char vtiden[] = "\033[?6c";
 
-/* Kerning / character bounding-box multipliers */
-static float cwscale = 1.0;
-static float chscale = 1.0;
-
 /*
  * word delimiter string
  *
  * More advanced example: " `'\"()[]{}"
  */
 static char worddelimiters[] = " ";
-
-/* selection timeouts (in milliseconds) */
-static unsigned int doubleclicktimeout = 300;
-static unsigned int tripleclicktimeout = 600;
 
 /* alt screens */
 static int allowaltscreen = 1;
