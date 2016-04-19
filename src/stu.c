@@ -313,6 +313,7 @@ typedef struct {
   float chscale;
   int doubleclicktimeout;
   int tripleclicktimeout;
+  int allowaltscreen;
 } Config;
 
 /* Drawing Context */
@@ -2172,13 +2173,13 @@ void tsetmode(int priv, int set, int *args, int narg)
         MODBIT(term.mode, set, MODE_8BIT);
         break;
       case 1049: /* swap screen & set/restore cursor as xterm */
-        if (!allowaltscreen)
+        if (!config.allowaltscreen)
           break;
         tcursor((set) ? CURSOR_SAVE : CURSOR_LOAD);
         /* FALLTHROUGH */
       case 47: /* swap screen */
       case 1047:
-        if (!allowaltscreen)
+        if (!config.allowaltscreen)
           break;
         alt = IS_SET(MODE_ALTSCREEN);
         if (alt) {
@@ -4288,13 +4289,11 @@ int parseconfig(const char *path)
       CFG_INT("defaultrcs", 15, CFGF_NONE),
       CFG_INT("borderpx", 2, CFGF_NONE),
       CFG_STR("shell", "/bin/sh", CFGF_NONE),
-<<<<<<< HEAD
       CFG_FLOAT("cwscale", 1.0, CFGF_NONE),
       CFG_FLOAT("chscale", 1.0, CFGF_NONE),
       CFG_INT("doubleclicktimeout", 300, CFGF_NONE),
       CFG_INT("tripleclicktimeout", 300, CFGF_NONE),
-=======
->>>>>>> 851601a73a9eb434d7665877de292d2cdf066b37
+      CFG_INT("allowaltscreen", 1, CFGF_NONE),
       CFG_END()
     };
 
@@ -4317,6 +4316,7 @@ int parseconfig(const char *path)
   config.chscale = cfg_getfloat(cfg, "chscale");
   config.doubleclicktimeout = cfg_getint(cfg, "doubleclicktimeout");
   config.tripleclicktimeout = cfg_getint(cfg, "tripleclicktimeout");
+  config.allowaltscreen = cfg_getint(cfg, "allowaltscreen");
 
   config.shell = xstrdup(cfg_getstr(cfg, "shell"));
 
@@ -4370,7 +4370,7 @@ int main(int argc, char *argv[])
 
   ARGBEGIN {
   case 'a':
-    allowaltscreen = 0;
+    config.allowaltscreen = 0;
     break;
   case 'c':
     opt_class = EARGF(usage());

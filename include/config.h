@@ -17,9 +17,6 @@ static char vtiden[] = "\033[?6c";
  */
 static char worddelimiters[] = " ";
 
-/* alt screens */
-static int allowaltscreen = 1;
-
 /* frames per second st should at maximum draw to the screen */
 static unsigned int xfps = 120;
 static unsigned int actionfps = 30;
