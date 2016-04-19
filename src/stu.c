@@ -87,12 +87,7 @@ char *argv0;
 #define TRUEGREEN(x)    (((x) & 0xff00))
 #define TRUEBLUE(x)   (((x) & 0xff) << 8)
 #define TLINE(y)    ((y) < term.scr ? term.hist[((y) + term.histi - term.scr \
-<<<<<<< HEAD
                          + histsize + 1) % histsize] : term.line[(y) - term.scr])
-=======
-                                                 + histsize + 1) % histsize] : term.line[(y) - term.scr])
->>>>>>> 851601a73a9eb434d7665877de292d2cdf066b37
-
 
 enum glyph_attribute {
   ATTR_NULL       = 0,
